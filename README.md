@@ -27,6 +27,7 @@ Deep learning model that automatically detects and segments brain tumors from MR
 
 U-Net encoder-decoder with skip connections:
 
+**Input** (3, 256, 256) → **Encoder** (4 levels) → **Bottleneck** (1024, 16, 16) → **Decoder** (4 levels) → **Output** (1, 256, 256)
 
 - **Encoder:** Conv2d → BatchNorm → ReLU → MaxPool (x4)
 - **Bottleneck:** 1024-channel feature representation
