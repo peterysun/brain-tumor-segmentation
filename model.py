@@ -36,18 +36,18 @@ class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
 
-        # ENCODER (shrinking path)
+
         self.enc1 = self.conv_block(3, 64)
         self.enc2 = self.conv_block(64, 128)
         self.enc3 = self.conv_block(128, 256)
         self.enc4 = self.conv_block(256, 512)
 
-        # BOTTLENECK
+
         self.bottleneck = self.conv_block(512, 1024)
 
-        # DECODER (expanding path)
+
         self.upconv4 = self.upconv(1024, 512)
-        self.dec4 = self.conv_block(1024, 512)  # 1024 because of skip connection
+        self.dec4 = self.conv_block(1024, 512)
 
         self.upconv3 = self.upconv(512, 256)
         self.dec3 = self.conv_block(512, 256)
@@ -58,10 +58,10 @@ class UNet(nn.Module):
         self.upconv1 = self.upconv(128, 64)
         self.dec1 = self.conv_block(128, 64)
 
-        # Final output layer: 64 channels → 1 channel (tumor probability)
+
         self.final = nn.Conv2d(64, 1, kernel_size=1)
 
-        # For shrinking in encoder
+
         self.pool = nn.MaxPool2d(2)
 
     def conv_block(self, in_channels, out_channels):
@@ -85,16 +85,16 @@ class UNet(nn.Module):
     def forward(self, x):
 
 
-        # ENCODER
+
         e1 = self.enc1(x)  # (3, 256, 256)   → (64, 256, 256)
         e2 = self.enc2(self.pool(e1))  # (64, 128, 128)  → (128, 128, 128)
         e3 = self.enc3(self.pool(e2))  # (128, 64, 64)   → (256, 64, 64)
         e4 = self.enc4(self.pool(e3))  # (256, 32, 32)   → (512, 32, 32)
 
-        # BOTTLENECK
+
         b = self.bottleneck(self.pool(e4))  # (512, 16, 16) → (1024, 16, 16)
 
-        # DECODER (with skip connections)
+
         d4 = self.upconv4(b)  # (1024, 16, 16) → (512, 32, 32)
         d4 = torch.cat([d4, e4], dim=1)  # concat with encoder: (1024, 32, 32)
         d4 = self.dec4(d4)  # (1024, 32, 32) → (512, 32, 32)
@@ -113,19 +113,19 @@ class UNet(nn.Module):
 
         # Final output
         out = self.final(d1)  # (64, 256, 256) → (1, 256, 256)
-        out = torch.sigmoid(out)  # squash to 0-1 (probability)
+        out = torch.sigmoid(out)  #  0-1
 
         return out
 
 
-# Quick test
+#test
 if __name__ == "__main__":
     model = UNet()
 
-    # Create a fake brain MRI batch: 2 images, 3 channels, 256x256
+
     fake_input = torch.randn(2, 3, 256, 256)
 
-    # Run it through the model
+
     output = model(fake_input)
 
     print(f"Input shape:  {fake_input.shape}")  # (2, 3, 256, 256)
@@ -134,4 +134,4 @@ if __name__ == "__main__":
 
     # Count parameters
     total_params = sum(p.numel() for p in model.parameters())
-    print(f"Total parameters: {total_params:,}")  # ~31 million
+    print(f"Total parameters: {total_params:,}")
