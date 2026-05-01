@@ -12,11 +12,8 @@ from model import UNet
 def dice_score(pred, target):
     """
     Dice Score: measures overlap between prediction and ground truth.
-
     1.0 = perfect match
     0.0 = no overlap at all
-
-    metric for medical segmentation.
     """
     smooth = 1e-5  # avoid division by zero
     pred_flat = pred.view(-1)
@@ -39,12 +36,8 @@ def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # ========================
-    # LOAD DATA
-    # ========================
     dataset = BrainTumorDataset(DATA_DIR, image_size=IMAGE_SIZE)
 
-    # Split into training (80%) and validation (20%)
     train_size = int(0.8 * len(dataset))
     val_size = len(dataset) - train_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
@@ -52,23 +45,17 @@ def train():
     print(f"Training samples: {len(train_dataset)}")
     print(f"Validation samples: {len(val_dataset)}")
 
-    # DataLoader: handles batching and shuffling
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    # ========================
-    # CREATE MODEL
-    # ========================
+
     model = UNet().to(device)
 
-    # Loss function: Binary Cross Entropy
-    # (how wrong are our tumor/no-tumor predictions)
+
     criterion = nn.BCELoss()
 
-    # Optimizer: Adam (adjusts model weights to reduce loss)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-    # TRAINING LOOP
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_losses = []
     val_losses = []
@@ -78,22 +65,18 @@ def train():
 
     for epoch in range(EPOCHS):
 
-        # --- TRAINING ---
         model.train()
         epoch_loss = 0
 
         for images, masks in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{EPOCHS}"):
-            # Move data to GPU/CPU
+
             images = images.float().to(device)
             masks = masks.float().to(device)
 
-            # Forward pass: run images through model
             predictions = model(images)
 
-            # Calculate loss: how wrong are we?
             loss = criterion(predictions, masks)
 
-            # Backward pass: calculate gradients
             optimizer.zero_grad()
             loss.backward()
 
@@ -105,12 +88,11 @@ def train():
         avg_train_loss = epoch_loss / len(train_loader)
         train_losses.append(avg_train_loss)
 
-        # --- VALIDATION ---
         model.eval()
         val_loss = 0
         val_dice = 0
 
-        with torch.no_grad():  # don't calculate gradients for validation
+        with torch.no_grad():
             for images, masks in val_loader:
                 images = images.float().to(device)
                 masks = masks.float().to(device)
@@ -119,7 +101,6 @@ def train():
                 loss = criterion(predictions, masks)
                 val_loss += loss.item()
 
-                # Calculate dice score
                 pred_binary = (predictions > 0.5).float()
                 val_dice += dice_score(pred_binary, masks).item()
 
@@ -132,15 +113,9 @@ def train():
               f"Val Loss: {avg_val_loss:.4f} | "
               f"Val Dice: {avg_val_dice:.4f}")
 
-    # ========================
-    # SAVE THE MODEL
-    # ========================
     torch.save(model.state_dict(), "brain_tumor_model.pth")
     print("\nModel saved to brain_tumor_model.pth")
 
-    # ========================
-    # PLOT TRAINING CURVES
-    # ========================
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
     ax1.plot(train_losses, label="Train Loss")
