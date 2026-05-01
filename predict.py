@@ -9,14 +9,6 @@ from model import UNet
 
 
 def visualize_predictions(num_samples=8):
-    """
-    Loads the trained model and shows predictions on validation images.
-
-    Displays three columns:
-    1. Original MRI scan
-    2. Ground truth mask (what the real tumor looks like)
-    3. Model prediction (what our AI thinks the tumor looks like)
-    """
 
     # Load model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,7 +26,7 @@ def visualize_predictions(num_samples=8):
         generator=torch.Generator().manual_seed(42)
     )
 
-    # Find samples that actually have tumors (more interesting to look at)
+    # Find samples that actually have tumors
     tumor_indices = []
     no_tumor_indices = []
 
@@ -48,10 +40,10 @@ def visualize_predictions(num_samples=8):
     print(f"Validation samples with tumors: {len(tumor_indices)}")
     print(f"Validation samples without tumors: {len(no_tumor_indices)}")
 
-    # Pick samples to show (mix of tumor and no-tumor)
+    # mix
     show_indices = tumor_indices[:num_samples]
 
-    # Create the visualization
+
     fig, axes = plt.subplots(num_samples, 3, figsize=(12, 4 * num_samples))
 
     if num_samples == 1:
@@ -60,27 +52,27 @@ def visualize_predictions(num_samples=8):
     for i, idx in enumerate(show_indices):
         image, mask = val_dataset[idx]
 
-        # Run through model
+
         image_tensor = torch.tensor(image).unsqueeze(0).float().to(device)
         with torch.no_grad():
             prediction = model(image_tensor)
 
-        # Convert back to numpy for plotting
+
         image_np = np.transpose(image, (1, 2, 0))  # (3,H,W) → (H,W,3)
         mask_np = mask.squeeze()  # (1,H,W) → (H,W)
         pred_np = prediction.cpu().squeeze().numpy()  # (1,1,H,W) → (H,W)
 
-        # Column 1: Original MRI
+        # original MRI
         axes[i, 0].imshow(image_np)
         axes[i, 0].set_title("MRI Scan", fontsize=12)
         axes[i, 0].axis("off")
 
-        # Column 2: Ground truth mask
+        # ground truth mask
         axes[i, 1].imshow(mask_np, cmap="Reds")
         axes[i, 1].set_title("Actual Tumor", fontsize=12)
         axes[i, 1].axis("off")
 
-        # Column 3: Model prediction
+        # model prediction
         axes[i, 2].imshow(pred_np, cmap="Reds")
         axes[i, 2].set_title("AI Prediction", fontsize=12)
         axes[i, 2].axis("off")
@@ -93,10 +85,6 @@ def visualize_predictions(num_samples=8):
 
 
 def overlay_prediction(image_path=None):
-    """
-    Shows the AI prediction overlaid on top of the MRI scan.
-    The tumor region is highlighted in red.
-    """
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet().to(device)
@@ -112,17 +100,17 @@ def overlay_prediction(image_path=None):
         if mask.sum() > 0:
             break
 
-    # Predict
+
     image_tensor = torch.tensor(image).unsqueeze(0).float().to(device)
     with torch.no_grad():
         prediction = model(image_tensor)
 
-    # Convert to numpy
+
     image_np = np.transpose(image, (1, 2, 0))
     pred_np = prediction.cpu().squeeze().numpy()
     pred_binary = (pred_np > 0.5).astype(np.float32)
 
-    # Create overlay: original image with red tumor highlight
+    # Create overlay
     overlay = image_np.copy()
     overlay[pred_binary == 1, 0] = 1.0  # red channel
     overlay[pred_binary == 1, 1] *= 0.3  # dim green
