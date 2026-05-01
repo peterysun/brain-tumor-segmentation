@@ -51,17 +51,16 @@ class BrainTumorDataset(Dataset):
 
     def __getitem__(self, idx):
         #this is the get image and mask pair where it tells the code how to do this once
-        # Load the MRI image
+
         image = Image.open(self.image_paths[idx]).convert("RGB")
 
-        # Load the mask (grayscale — just black and white)
+        # Load the mask
         mask = Image.open(self.mask_paths[idx]).convert("L")
 
         # Resize both to same size
         image = image.resize((self.image_size, self.image_size))
         mask = mask.resize((self.image_size, self.image_size))
-        #Now that you have resized and loaded both the images after importing them,
-        # you must convert them into numpy arrays for the model to scan them
+
         # Convert to numpy arrays
         image = np.array(image, dtype=np.float32) / 255.0  # normalize to 0-1
         mask = np.array(mask, dtype=np.float32) / 255.0  # normalize to 0-1
@@ -69,20 +68,18 @@ class BrainTumorDataset(Dataset):
         # Make mask binary: 1 = tumor, 0 = no tumor
         mask = (mask > 0.5).astype(np.float32)
 
-        # Rearrange image from (H, W, 3) to (3, H, W) — PyTorch expects this
+        # Rearrange image by transpose
         image = np.transpose(image, (2, 0, 1))
 
-        # Add channel dimension to mask: (H, W) → (1, H, W)
         mask = np.expand_dims(mask, axis=0)
 
         return image, mask
 
 
-# Quick test — run this file directly to see if data loads
 if __name__ == "__main__":
     dataset = BrainTumorDataset("brainTumorProj/kaggle_3m")
     image, mask = dataset[0]
-    print(f"Image shape: {image.shape}")  # should be (3, 256, 256)
-    print(f"Mask shape: {mask.shape}")  # should be (1, 256, 256)
+    print(f"Image shape: {image.shape}") 
+    print(f"Mask shape: {mask.shape}") 
     print(f"Image range: {image.min():.2f} to {image.max():.2f}")
     print(f"Mask unique values: {np.unique(mask)}")
