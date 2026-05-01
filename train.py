@@ -23,16 +23,12 @@ def dice_score(pred, target):
 
 
 def train():
-    # ========================
-    # SETTINGS
-    # ========================
     DATA_DIR = "brainTumorProj/kaggle_3m"
     IMAGE_SIZE = 256
     BATCH_SIZE = 8
     EPOCHS = 20
     LEARNING_RATE = 0.001
 
-    # Use GPU if available (way faster), otherwise CPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
